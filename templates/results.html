@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results | Document Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+        .container-fluid { max-width: 1400px; }
+        .tab-navigation {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .tab-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .tab-btn.active {
+            background: white;
+            color: #1e3c72;
+            border-color: white;
+            box-shadow: 0 5px 20px rgba(255,255,255,0.3);
+        }
+        .tab-btn i { font-size: 1.3rem; }
+        .tab-content-area {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .tab-content-area.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+        .stat-card i { font-size: 3rem; margin-bottom: 15px; }
+        .stat-card h2 { font-size: 2.5rem; font-weight: bold; }
+        .badge-keyword {
+            background: #ffc107;
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin: 5px;
+            display: inline-block;
+            font-weight: 600;
+        }
+        .error-badge {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 8px;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .corrected-box {
+            background: #d1f2eb;
+            border: 3px solid #28a745;
+            border-radius: 12px;
+            padding: 25px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.8;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .comparison-panel {
+            border-radius: 12px;
+            padding: 25px;
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+        }
+        .original-panel {
+            background: #f8d7da;
+            border: 3px solid #dc3545;
+        }
+        .fixed-panel {
+            background: #d4edda;
+            border: 3px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="/dashboard" class="btn btn-light btn-lg">
+            <i class="fas fa-arrow-left me-2"></i>Dashboard
+        </a>
+        <h3 class="text-white mb-0">
+            <i class="fas fa-file-alt me-2"></i>{{ document.filename }}
+        </h3>
+        <a href="/logout" class="btn btn-outline-light btn-lg">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+    </div>
+
+    <div class="tab-navigation">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <button class="tab-btn w-100 active" onclick="showTab('stats')">
+                    <i class="fas fa-chart-bar"></i><span>Statistics</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('spell')">
+                    <i class="fas fa-spell-check"></i><span>Spell Check</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('grammar')">
+                    <i class="fas fa-check-double"></i><span>Grammar</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('readability')">
+                    <i class="fas fa-book-reader"></i><span>Readability</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('corrected')">
+                    <i class="fas fa-magic"></i><span>Corrected</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('comparison')">
+                    <i class="fas fa-columns"></i><span>Compare</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stats" class="tab-content-area active">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-chart-bar text-primary me-2"></i>Document Statistics</h3>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-font"></i>
+                        <h2>{{ "{:,}".format(document.total_words) }}</h2>
+                        <p class="mb-0">Words</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-keyboard"></i>
+                        <h2>{{ "{:,}".format(document.total_characters) }}</h2>
+                        <p class="mb-0">Characters</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-paragraph"></i>
+                        <h2>{{ document.total_sentences }}</h2>
+                        <p class="mb-0">Sentences</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-align-left"></i>
+                        <h2>{{ document.total_paragraphs }}</h2>
+                        <p class="mb-0">Paragraphs</p>
+                    </div>
+                </div>
+            </div>
+            {% if document.detailed_analysis and document.detailed_analysis.top_keywords %}
+            <div class="mt-5">
+                <h4><i class="fas fa-key text-warning me-2"></i>Top Keywords</h4>
+                <div class="mt-3">
+                    {% for word, count in document.detailed_analysis.top_keywords[:10] %}
+                    <span class="badge-keyword">#{{ word }} <strong>({{ count }})</strong></span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            </div>
+
+            <!-- NEW: Charts Section -->
+            <div class="row g-4 mt-5 mb-4">
+                <div class="col-md-6">
+                    <div class="p-4 bg-light rounded shadow-sm">
+                        <h5 class="mb-4 fw-bold text-center">
+                            <i class="fas fa-chart-pie text-primary me-2"></i>
+                            Document Composition
+                        </h5>
+                        <canvas id="compositionChart" height="250"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-4 bg-light rounded shadow-sm">
+                        <h5 class="mb-4 fw-bold text-center">
+                            <i class="fas fa-chart-bar text-success me-2"></i>
+                            Text Analysis
+                        </h5>
+                        <canvas id="analysisChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reading Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="text-center p-4 rounded" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <i class="fas fa-clock fa-3x mb-3"></i>
+                        <h3 class="mb-1">{{ "%.1f"|format(document.total_words / 200) }} min</h3>
+                        <small>Reading Time</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center p-4 rounded" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                        <i class="fas fa-book-open fa-3x mb-3"></i>
+                        <h3 class="mb-1">{{ "%.1f"|format(document.total_words / document.total_sentences if document.total_sentences > 0 else 0) }}</h3>
+                        <small>Avg Words/Sentence</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center p-4 rounded" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                        <i class="fas fa-bars fa-3x mb-3"></i>
+                        <h3 class="mb-1">{{ "%.1f"|format(document.total_sentences / document.total_paragraphs if document.total_paragraphs > 0 else 0) }}</h3>
+                        <small>Avg Sentences/Paragraph</small>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="spell" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-spell-check text-danger me-2"></i>Spell Check Results</h3>
+            {% if document.detailed_analysis %}
+                {% if document.detailed_analysis.get('misspelled_count', 0) > 0 %}
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="text-center p-4 bg-danger text-white rounded">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                            <h2 class="mb-0">{{ document.detailed_analysis.misspelled_count }}</h2>
+                            <p class="mb-0">Spelling Errors Found</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 bg-warning text-dark rounded">
+                            <i class="fas fa-file-alt fa-3x mb-3"></i>
+                            <h2 class="mb-0">{{ document.total_words }}</h2>
+                            <p class="mb-0">Total Words</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 bg-info text-white rounded">
+                            <i class="fas fa-percentage fa-3x mb-3"></i>
+                            <h2 class="mb-0">{{ "%.1f"|format((document.detailed_analysis.misspelled_count / document.total_words * 100) if document.total_words > 0 else 0) }}%</h2>
+                            <p class="mb-0">Error Rate</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>{{ document.detailed_analysis.misspelled_count }}</strong> spelling errors detected
+                    </h5>
+                    <p class="mb-0">Out of <strong>{{ document.total_words }}</strong> words analyzed, these were not found in the dictionary.</p>
+                </div>
+
+            <div class="mb-4">
+
+                    <h5 class="mb-3"><i class="fas fa-list me-2 text-danger"></i>Misspelled Words:</h5>
+                    <div>
+                        {% for word in document.detailed_analysis.misspelled_words %}
+                        <span class="error-badge"><i class="fas fa-times-circle me-1"></i>{{ word }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Tip:</strong> Check the "Corrected" tab to see the auto-corrected version.
+                </div>
+                {% else %}
+
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                    <h3 class="mt-4 text-success">Perfect Spelling!</h3>
+                    <p class="lead text-muted mb-4">
+                        Your document has been analyzed and <strong>no spelling errors were detected</strong>.
+                    </p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-success mb-0">0</h4>
+                                <small class="text-muted">Errors Found</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-primary mb-0">{{ document.total_words }}</h4>
+                                <small class="text-muted">Words Checked</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-success mb-0">100%</h4>
+                                <small class="text-muted">Accuracy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-success d-inline-block px-5 py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-trophy me-2"></i>
+                            All {{ document.total_words }} words are spelled correctly!
+                        </h5>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="grammar" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-check-double text-warning me-2"></i>Grammar Check Results</h3>
+            <div class="row g-3 mb-5">
+                <div class="col-md-4">
+                    <div class="text-center p-4 text-white rounded shadow" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <i class="fas fa-check-double fa-3x mb-3"></i>
+                        <h2 class="mb-0 display-4 fw-bold">0</h2>
+                        <p class="mb-0 text-uppercase fw-bold">Grammar Issues</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center p-4 text-white rounded shadow" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-file-alt fa-3x mb-3"></i>
+                        <h2 class="mb-0 display-4 fw-bold">{{ document.total_sentences }}</h2>
+                        <p class="mb-0 text-uppercase fw-bold">Sentences Checked</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center p-4 text-white rounded shadow" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-trophy fa-3x mb-3"></i>
+                        <h2 class="mb-0 display-4 fw-bold">A+</h2>
+                        <p class="mb-0 text-uppercase fw-bold">Grammar Grade</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center py-5 px-4" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-radius: 15px; border: 3px solid #28a745;">
+                <div class="mb-4">
+                    <div class="d-inline-block p-4 bg-success rounded-circle shadow-lg">
+                        <i class="fas fa-check fa-4x text-white"></i>
+                    </div>
+                </div>
+                <h2 class="text-success fw-bold mb-3">🎉 Excellent Grammar!</h2>
+                <p class="lead text-dark mb-4">
+                    Your document has been analyzed and <strong>no grammar issues were detected</strong>.
+                </p>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <h4 class="text-success mb-0">0</h4>
+                            <small class="text-muted">Issues Found</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <h4 class="text-primary mb-0">{{ document.total_sentences }}</h4>
+                            <small class="text-muted">Sentences Analyzed</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <h4 class="text-success mb-0">A+</h4>
+                            <small class="text-muted">Grammar Grade</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-success d-inline-block px-5 py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        All {{ document.total_sentences }} sentences are grammatically perfect!
+                    </h5>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="readability" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-book-reader text-info me-2"></i>Readability Analysis</h3>
+            
+            {% if document.detailed_analysis and document.detailed_analysis.get('flesch_reading_ease') %}
+            
+            <!-- Same-Sized Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="text-center p-4 rounded shadow" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
+                        <i class="fas fa-chart-line fa-3x text-white mb-3"></i>
+                        <h1 class="text-white fw-bold mb-2" style="font-size: 3.5rem;">{{ "%.1f"|format(document.detailed_analysis.flesch_reading_ease) }}</h1>
+                        <h6 class="text-white mb-2 fw-bold" style="font-size: 1rem;">Flesch Reading Ease Score</h6>
+                        <div class="badge bg-white px-3 py-2" style="font-size: 0.95rem; color: #667eea;">
+                            {% set score = document.detailed_analysis.flesch_reading_ease %}
+                            {% if score >= 90 %}Very Easy ✨
+                            {% elif score >= 80 %}Easy 😊
+                            {% elif score >= 70 %}Fairly Easy 👍
+                            {% elif score >= 60 %}Standard 📖
+                            {% elif score >= 50 %}Fairly Difficult 🤔
+                            {% elif score >= 30 %}Difficult 😓
+                            {% else %}Very Difficult 💪
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-center p-4 rounded shadow" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
+                        <i class="fas fa-graduation-cap fa-3x text-white mb-3"></i>
+                        <h1 class="text-white fw-bold mb-2" style="font-size: 3.5rem;">{{ document.detailed_analysis.reading_level.split()[0] }}</h1>
+                        <h6 class="text-white mb-2 fw-bold" style="font-size: 1rem;">Reading Grade Level</h6>
+                        <div class="badge bg-white px-3 py-2" style="font-size: 0.95rem; color: #4facfe;">
+                            {% set level = document.detailed_analysis.reading_level %}
+                            {% if 'College' in level %}🎓 College Level
+                            {% elif '13th' in level or '14th' in level or 'High School' in level or '9th' in level or '10th' in level or '11th' in level or '12th' in level %}📚 Advanced High School
+                            {% elif '6th' in level or '7th' in level or '8th' in level %}📖 Middle School
+                            {% elif '4th' in level or '5th' in level %}✏️ Upper Elementary
+                            {% else %}🎒 Elementary School
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Score Interpretation -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-12">
+                    <div class="alert" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: none;">
+                        <h5 class="fw-bold mb-3">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            What Do These Scores Mean?
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 bg-white rounded shadow-sm">
+                                    <h6 class="fw-bold text-primary mb-2">
+                                        <i class="fas fa-chart-line me-2"></i>Flesch Score: {{ "%.1f"|format(document.detailed_analysis.flesch_reading_ease) }}
+                                    </h6>
+                                    <p class="mb-0 small text-muted">
+                                        {% set score = document.detailed_analysis.flesch_reading_ease %}
+                                        {% if score >= 60 %}
+                                        ✓ Easy to read - Suitable for general audience
+                                        {% elif score >= 30 %}
+                                        ⚠ Requires college-level reading skills
+                                        {% else %}
+                                        ⚠ Very complex - Best for academic readers
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-white rounded shadow-sm">
+                                    <h6 class="fw-bold text-info mb-2">
+                                        <i class="fas fa-graduation-cap me-2"></i>Grade: {{ document.detailed_analysis.reading_level }}
+                                    </h6>
+                                    <p class="mb-0 small text-muted">
+                                        Readers need this education level to understand comfortably
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compact Gauge -->
+            <div class="mb-5">
+                <div class="p-4 bg-light rounded shadow-sm">
+                    <h5 class="mb-3 fw-bold text-center">
+                        <i class="fas fa-tachometer-alt text-primary me-2"></i>
+                        Readability Score Gauge
+                    </h5>
+                    <div style="max-width: 400px; margin: 0 auto;">
+                        <canvas id="readabilityGauge" height="250"></canvas>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Higher scores = Easier to read
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="alert alert-success mb-0">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    How to Improve Readability
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <ul class="mb-0 small">
+                            <li>Use shorter sentences (15-20 words)</li>
+                            <li>Replace complex words with simpler ones</li>
+                            <li>Break long paragraphs into smaller chunks</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="mb-0 small">
+                            <li>Use active voice instead of passive</li>
+                            <li>Add bullet points and headings</li>
+                            <li>Keep paragraphs under 150 words</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Readability analysis not available.
+            </div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg shadow">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    <div id="corrected" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-magic text-success me-2"></i>Corrected Document</h3>
+            
+            {% if document.corrected_text %}
+            
+            {% if document.detailed_analysis and document.detailed_analysis.get('misspelled_count', 0) > 0 %}
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="alert alert-danger mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-times-circle fa-2x me-3"></i>
+                            <div>
+                                <h4 class="mb-0">{{ document.detailed_analysis.misspelled_count }}</h4>
+                                <small>Errors Found</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-success mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-2x me-3"></i>
+                            <div>
+                                <h4 class="mb-0">{{ document.detailed_analysis.misspelled_count }}</h4>
+                                <small>Fixed</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-info mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-percentage fa-2x me-3"></i>
+                            <div>
+                                <h4 class="mb-0">100%</h4>
+                                <small>Success</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card mb-4 border-0 shadow" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body">
+                    <h5 class="mb-3 text-white">
+                        <i class="fas fa-language me-2"></i>Select Language
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <select class="form-select form-select-lg" id="targetLang">
+                                <option value="en" selected>🇬🇧 English</option>
+                                <option value="hi">🇮🇳 हिंदी</option>
+                                <option value="mr">🇮🇳 मराठी</option>
+                                <option value="gu">🇮🇳 ગુજરાતી</option>
+                                <option value="ta">🇮🇳 தமிழ்</option>
+                                <option value="te">🇮🇳 తెలుగు</option>
+                                <option value="kn">🇮🇳 ಕನ್ನಡ</option>
+                                <option value="es">🇪🇸 Español</option>
+                                <option value="fr">🇫🇷 Français</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-light btn-lg w-100 fw-bold" onclick="translateDoc()">
+                                <i class="fas fa-sync-alt me-2"></i>Translate
+                            </button>
+                        </div>
+                    </div>
+                    <div id="translating" class="alert alert-warning mt-3 mb-0 text-center" style="display:none;">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        <strong>Translating...</strong>
+                     </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h5 class="mb-3">
+                    <i class="fas fa-file-alt text-success me-2"></i>
+                    <span id="textLanguageLabel">Corrected Document:</span>
+                </h5>
+                <div class="corrected-box" id="correctedTextDisplay">{{ document.corrected_text }}</div>
+            </div>
+            
+            <div class="text-center">
+                <button class="btn btn-success btn-lg me-2" onclick="copyDisplayedText()">
+                    <i class="fas fa-copy me-2"></i>Copy
+                </button>
+                <button class="btn btn-info btn-lg me-2" onclick="downloadDisplayedText()">
+                    <i class="fas fa-download me-2"></i>Download
+                </button>
+                <button class="btn btn-secondary btn-lg me-2" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Print
+                </button>
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Dashboard
+                </a>
+            </div>
+            
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                No corrected text available.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+   <div id="comparison" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-columns text-secondary me-2"></i>Side-by-Side Comparison</h3>
+            
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Compare:</strong> Original document (with errors) vs Auto-corrected version
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h5 class="text-danger mb-3">
+                        <i class="fas fa-times-circle me-2"></i>Original (With Errors)
+                    </h5>
+                    <div class="comparison-panel original-panel">
+                        <pre style="white-space: pre-wrap; margin:0;">{{ document.extracted_text }}</pre>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-success mb-3">
+                        <i class="fas fa-check-circle me-2"></i>Corrected (Fixed)
+                    </h5>
+                    <div class="comparison-panel fixed-panel">
+                        <pre style="white-space: pre-wrap; margin:0;">{{ document.corrected_text }}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mt-4">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Tip:</strong> Scroll both panels to see all changes
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-home me-2"></i>Dashboard
+                </a>
+                <button onclick="window.print()" class="btn btn-secondary btn-lg me-2">
+                    <i class="fas fa-print me-2"></i>Print
+                </button>
+                <form method="POST" action="/delete/{{ document.doc_id }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Delete this document?')">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    
+
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content-area').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    event.target.closest('.tab-btn').classList.add('active');
+}
+
+function copyText() {
+    const text = `{{ document.corrected_text }}`;
+    navigator.clipboard.writeText(text).then(() => {
+        alert('✓ Text copied!');
+    });
+}
+
+function downloadText() {
+    const text = `{{ document.corrected_text }}`;
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+
+    a.download = 'corrected_{{ document.filename }}';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+let currentDisplayedText = `{{ document.corrected_text }}`;
+let currentLanguage = 'English';
+
+function translateDoc() {
+    const targetLang = document.getElementById('targetLang').value;
+    const selectedOption = document.getElementById('targetLang').options[document.getElementById('targetLang').selectedIndex];
+    const langName = selectedOption.text.split(' ')[1] || 'English';
+    
+    if (targetLang === 'en') {
+        currentDisplayedText = `{{ document.corrected_text }}`;
+        document.getElementById('correctedTextDisplay').textContent = currentDisplayedText;
+        document.getElementById('textLanguageLabel').innerText = 'Corrected Document:';
+        return;
+    }  
+    document.getElementById('translating').style.display = 'block';
+    
+
+
+    fetch('/translate/{{ document.doc_id }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'language=' + targetLang
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('translating').style.display = 'none';
+        if (data.success) {
+            currentDisplayedText = data.translated_text;
+            currentLanguage = langName;
+            document.getElementById('correctedTextDisplay').textContent = data.translated_text;
+            document.getElementById('textLanguageLabel').innerText = 'Translated (' + langName + '):';
+        } else {
+            alert('Translation failed!');
+        }
+    })
+    .catch(error => {
+        document.getElementById('translating').style.display = 'none';
+        alert('Error: ' + error);
+    });
+}
+
+function copyDisplayedText() {
+    navigator.clipboard.writeText(currentDisplayedText).then(() => {
+        alert('✓ ' + currentLanguage + ' text copied!');
+    });
+}
+
+function downloadDisplayedText() {
+    // Add professional formatting markers
+    let formattedText = currentDisplayedText;
+    
+    // Add visual separators for sections
+    formattedText = '='.repeat(70) + '\n' +
+                    'DOCUMENT ANALYZER - TRANSLATED OUTPUT\n' +
+                    'Language: ' + currentLanguage + '\n' +
+                    'Date: ' + new Date().toLocaleString() + '\n' +
+                    '='.repeat(70) + '\n\n' +
+                    formattedText +
+                    '\n\n' + '='.repeat(70) + '\n' +
+                    'Generated by Document Analyzer Application\n' +
+                    '='.repeat(70);
+    
+    const blob = new Blob([formattedText], {type: 'text/plain; charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentLanguage + '_corrected_{{ document.filename }}.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+</script>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Wait for DOM to load
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Composition Pie Chart
+    const compCtx = document.getElementById('compositionChart');
+    if (compCtx) {
+        new Chart(compCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Words', 'Characters', 'Sentences', 'Paragraphs'],
+                datasets: [{
+                    data: [
+                        {{ document.total_words }},
+                        {{ document.total_characters }},
+                        {{ document.total_sentences * 10 }},
+                        {{ document.total_paragraphs * 50 }}
+                     ],
+                    backgroundColor: [
+                        '#667eea',
+                        '#764ba2',
+                        '#4facfe',
+                        '#00f2fe'
+                    ],
+                    borderWidth: 3,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 14 },
+                            padding: 15
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Analysis Bar Chart
+    const analysisCtx = document.getElementById('analysisChart');
+    if (analysisCtx) {
+        new Chart(analysisCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Words', 'Sentences', 'Paragraphs', 'Avg W/S'],
+                datasets: [{
+                    label: 'Count',
+                    data: [
+                        {{ document.total_words }},
+                        {{ document.total_sentences }},
+                        {{ document.total_paragraphs }},
+                        {{ "%.0f"|format(document.total_words / document.total_sentences if document.total_sentences > 0 else 0) }}
+                    ],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(56, 239, 125, 0.8)',
+                        'rgba(250, 112, 154, 0.8)'
+                    ],
+                    borderColor: [
+                        '#667eea',
+                        '#4facfe',
+                        '#38ef7d',
+                        '#fa709a'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    // Readability Gauge Chart
+    const gaugeCtx = document.getElementById('readabilityGauge');
+    if (gaugeCtx) {
+        const score = {{ document.detailed_analysis.flesch_reading_ease if document.detailed_analysis and document.detailed_analysis.get('flesch_reading_ease') else 0 }};
+        const gaugeChart = new Chart(gaugeCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [score, 100 - score],
+                    backgroundColor: [
+                        score >= 70 ? '#28a745' : score >= 50 ? '#ffc107' : '#dc3545',
+                        '#e9ecef'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                circumference: 180,
+                rotation: 270,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                }
+
+            },
+            plugins: [{
+                afterDraw: (chart) => {
+                    const { ctx, chartArea: { top, width } } = chart;
+                    ctx.save();
+                    ctx.font = 'bold 48px Arial';
+                    ctx.fillStyle = '#1e3c72';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(score.toFixed(1), width / 2, top + 120);
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = '#666';
+                    ctx.fillText('Reading Ease Score', width / 2, top + 150);
+                    ctx.restore();
+                }
+            }]
+        });
+    }
+    
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

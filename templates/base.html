@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Document Analyzer{% endblock %} | MICT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+        }
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            border: none;
+        }
+        .btn {
+            border-radius: 8px;
+        }
+        .badge {
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        footer {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-file-alt me-2 text-primary"></i>
+                Document Analyzer
+            </a>
+            <div class="d-flex align-items-center">
+                {% if session.get('username') %}
+                <span class="navbar-text me-3 text-white">
+                    <i class="fas fa-user-circle me-1 text-info"></i>
+                    {{ session.get('username') }}
+                </span>
+                <a href="/logout" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container-fluid px-4 mt-2">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mt-2" role="alert">
+                    {% if category == 'success' %}
+                        <i class="fas fa-check-circle me-2"></i>
+                    {% elif category == 'danger' %}
+                        <i class="fas fa-times-circle me-2"></i>
+                    {% elif category == 'warning' %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container-fluid px-4 mt-3">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-white text-center py-3 mt-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <small>
+                        <i class="fas fa-file-alt me-2"></i>
+                        <strong>Document Analyzer</strong>
+                    </small>
+                </div>
+                <div class="col-md-4">
+                    <small>
+                        &copy; 2026 MICT Computer Education
+                    </small>
+                </div>
+                <div class="col-md-4">
+                    <small>
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-award me-1"></i>
+                            GOVT. RECOGNISED
+                        </span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999;">
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; color:white;">
+            <div class="spinner-border text-light mb-3" style="width:5rem; height:5rem;"></div>
+            <h3>Processing Document...</h3>
+            <p class="text-warning"><i class="fas fa-clock me-2"></i>This may take 10-60 seconds for large files</p>
+            <div class="progress mt-3" style="width:300px; height:8px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width:100%"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'block';
+    }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+
+</body>
+</html>

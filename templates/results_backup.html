@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results | Document Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .alert h4 {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        .alert small {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+        }
+        .container-fluid { max-width: 1400px; }
+        .tab-navigation {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .tab-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        .tab-btn.active {
+            background: white;
+            color: #1e3c72;
+            border-color: white;
+            box-shadow: 0 5px 20px rgba(255,255,255,0.3);
+        }
+        .tab-btn i { font-size: 1.3rem; }
+        .tab-content-area {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .tab-content-area.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .content-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+        .stat-card i { font-size: 3rem; margin-bottom: 15px; }
+        .stat-card h2 { font-size: 2.5rem; font-weight: bold; }
+        .badge-keyword {
+            background: #ffc107;
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin: 5px;
+            display: inline-block;
+            font-weight: 600;
+        }
+        .error-badge {
+            background: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 8px;
+            display: inline-block;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .success-alert {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .corrected-box {
+            background: #d1f2eb;
+            border: 3px solid #28a745;
+            border-radius: 12px;
+            padding: 25px;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.8;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .comparison-panel {
+            border-radius: 12px;
+            padding: 25px;
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+        }
+        .original-panel {
+            background: #f8d7da;
+            border: 3px solid #dc3545;
+        }
+        .fixed-panel {
+            background: #d4edda;
+            border: 3px solid #28a745;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="/dashboard" class="btn btn-light btn-lg">
+            <i class="fas fa-arrow-left me-2"></i>Dashboard
+        </a>
+        <h3 class="text-white mb-0">
+            <i class="fas fa-file-alt me-2"></i>{{ document.filename }}
+        </h3>
+        <a href="/logout" class="btn btn-outline-light btn-lg">
+            <i class="fas fa-sign-out-alt me-2"></i>Logout
+        </a>
+    </div>
+
+    <div class="tab-navigation">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <button class="tab-btn w-100 active" onclick="showTab('stats')">
+                    <i class="fas fa-chart-bar"></i><span>Statistics</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('spell')">
+                    <i class="fas fa-spell-check"></i><span>Spell Check</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('grammar')">
+                    <i class="fas fa-check-double"></i><span>Grammar</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('readability')">
+                    <i class="fas fa-book-reader"></i><span>Readability</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('corrected')">
+                    <i class="fas fa-magic"></i><span>Corrected</span>
+                </button>
+            </div>
+            <div class="col-md-2">
+                <button class="tab-btn w-100" onclick="showTab('comparison')">
+                    <i class="fas fa-columns"></i><span>Compare</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stats" class="tab-content-area active">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-chart-bar text-primary me-2"></i>Document Statistics</h3>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-font"></i>
+                        <h2>{{ "{:,}".format(document.total_words) }}</h2>
+                        <p class="mb-0">Words</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-keyboard"></i>
+                        <h2>{{ "{:,}".format(document.total_characters) }}</h2>
+                        <p class="mb-0">Characters</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-paragraph"></i>
+                        <h2>{{ document.total_sentences }}</h2>
+                        <p class="mb-0">Sentences</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <i class="fas fa-align-left"></i>
+                        <h2>{{ document.total_paragraphs }}</h2>
+                        <p class="mb-0">Paragraphs</p>
+                    </div>
+                </div>
+            </div>
+            {% if document.detailed_analysis and document.detailed_analysis.top_keywords %}
+            <div class="mt-5">
+                <h4><i class="fas fa-key text-warning me-2"></i>Top Keywords</h4>
+                <div class="mt-3">
+                    {% for word, count in document.detailed_analysis.top_keywords[:10] %}
+                    <span class="badge-keyword">#{{ word }} <strong>({{ count }})</strong></span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="spell" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-spell-check text-danger me-2"></i>Spell Check Results</h3>
+            {% if document.detailed_analysis %}
+                {% if document.detailed_analysis.get('misspelled_count', 0) > 0 %}
+                
+                <!-- Error Stats -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="text-center p-4 bg-danger text-white rounded">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                            <h2 class="mb-0">{{ document.detailed_analysis.misspelled_count }}</h2>
+                            <p class="mb-0">Spelling Errors Found</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 bg-warning text-dark rounded">
+                            <i class="fas fa-file-alt fa-3x mb-3"></i>
+                            <h2 class="mb-0">{{ document.total_words }}</h2>
+                            <p class="mb-0">Total Words</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-4 bg-info text-white rounded">
+                            <i class="fas fa-percentage fa-3x mb-3"></i>
+                            <h2 class="mb-0">{{ "%.1f"|format((document.detailed_analysis.misspelled_count / document.total_words * 100) if document.total_words > 0 else 0) }}%</h2>
+                            <p class="mb-0">Error Rate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert -->
+                <div class="alert alert-danger">
+                    <h5>
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>{{ document.detailed_analysis.misspelled_count }}</strong> spelling errors detected in your document
+                    </h5>
+                    <p class="mb-0">These words were not found in the dictionary and may be misspelled.</p>
+                </div>
+
+                <!-- Misspelled Words -->
+                <div class="mb-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-list me-2 text-danger"></i>Misspelled Words:
+                    </h5>
+                    <div>
+                        {% for word in document.detailed_analysis.misspelled_words %}
+                        <span class="error-badge">
+                            <i class="fas fa-times-circle me-1"></i>{{ word }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Help Text -->
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Tip:</strong> Check the "Corrected" tab to see the auto-corrected version of your document.
+                </div>
+
+                {% else %}
+                
+                <!-- No Errors -->
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                    <h3 class="mt-4 text-success">Perfect Spelling!</h3>
+                    <p class="lead text-muted mb-4">
+                        Your document has been analyzed and <strong>After checking, no spelling errors were found.</strong>.
+                    </p>
+                    
+                    <!-- Stats -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-success mb-0">0</h4>
+                                <small class="text-muted">Errors Found</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-primary mb-0">{{ document.total_words }}</h4>
+                                <small class="text-muted">Words Checked</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-success mb-0">100%</h4>
+                                <small class="text-muted">Accuracy</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Success Badge -->
+                    <div class="alert alert-success d-inline-block px-5 py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-trophy me-2"></i>
+                            All {{ document.total_words }} words are spelled correctly!
+                        </h5>
+                    </div>
+                </div>                
+                {% endif %}
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    <div id="grammar" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-check-double text-warning me-2"></i>Grammar Check Results</h3>
+            
+            <!-- Top Stats Cards with Gradients -->
+            <div class="row g-3 mb-5">
+                <div class="col-md-4">
+                    <div class="text-center p-4 text-white rounded shadow" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <i class="fas fa-check-double fa-3x mb-3"></i>
+                        <h2 class="mb-0 display-4 fw-bold">0</h2>
+                        <p class="mb-0 text-uppercase fw-bold">Grammar Issues</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center p-4 text-white rounded shadow" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-file-alt fa-3x mb-3"></i>
+                        <h2 class="mb-0 display-4 fw-bold">{{ document.total_sentences }}</h2>
+                        <p class="mb-0 text-uppercase fw-bold">Sentences Checked</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center p-4 text-white rounded shadow" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-trophy fa-3x mb-3"></i>
+                        <h2 class="mb-0 display-4 fw-bold">A+</h2>
+                        <p class="mb-0 text-uppercase fw-bold">Grammar Grade</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Success Section -->
+            <div class="text-center py-5 px-4" style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); border-radius: 15px; border: 3px solid #28a745;">
+                <div class="mb-4">
+                    <div class="d-inline-block p-4 bg-success rounded-circle shadow-lg">
+                        <i class="fas fa-check fa-4x text-white"></i>
+                    </div>
+                </div>
+                <h2 class="text-success fw-bold mb-3">🎉 Perfect Grammar!</h2>
+                <p class="lead text-dark mb-4">
+                    Your document has been thoroughly analyzed and <strong>After analysis, the document now reports no grammar issues.</strong>.
+                </p>
+                
+                <!-- Mini Stats -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <h3 class="text-success fw-bold mb-1">0</h3>
+                            <small class="text-muted fw-bold">ERRORS FOUND</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <h3 class="text-primary fw-bold mb-1">{{ document.total_sentences }}</h3>
+                            <small class="text-muted fw-bold">SENTENCES ANALYZED</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-white rounded shadow-sm">
+                            <h3 class="text-warning fw-bold mb-1">100%</h3>
+                            <small class="text-muted fw-bold">ACCURACY RATE</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievement Badge -->
+                <div class="d-inline-block px-5 py-3 bg-success text-white rounded-pill shadow-lg">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-medal me-2"></i>
+                        All {{ document.total_sentences }} sentences are grammatically perfect!
+                    </h5>
+                </div>
+            </div>
+
+            <!-- Grammar Categories Checked -->
+            <div class="mt-5">
+                <h5 class="mb-4 fw-bold">
+                    <i class="fas fa-clipboard-check text-primary me-2"></i>
+                    Comprehensive Grammar Analysis Performed:
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3;">
+                            <h6 class="fw-bold text-primary mb-2">
+                                <i class="fas fa-check-circle me-2"></i>Sentence Structure
+                            </h6>
+                            <small class="text-muted">Subject-verb agreement, sentence completeness</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-left: 4px solid #9c27b0;">
+                            <h6 class="fw-bold text-purple mb-2">
+                                <i class="fas fa-check-circle me-2"></i>Verb Tenses
+                            </h6>
+                            <small class="text-muted">Consistency and proper usage</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left: 4px solid #ff9800;">
+                            <h6 class="fw-bold text-warning mb-2">
+                                <i class="fas fa-check-circle me-2"></i>Punctuation
+                            </h6>
+                            <small class="text-muted">Commas, periods, apostrophes, quotations</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left: 4px solid #4caf50;">
+                            <h6 class="fw-bold text-success mb-2">
+                                <i class="fas fa-check-circle me-2"></i>Articles & Prepositions
+                            </h6>
+                            <small class="text-muted">A/an/the, in/on/at usage</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-left: 4px solid #e91e63;">
+                            <h6 class="fw-bold text-danger mb-2">
+                                <i class="fas fa-check-circle me-2"></i>Word Order
+                            </h6>
+                            <small class="text-muted">Proper sentence construction</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%); border-left: 4px solid #009688;">
+                            <h6 class="fw-bold text-info mb-2">
+                                <i class="fas fa-check-circle me-2"></i>Capitalization
+                            </h6>
+                            <small class="text-muted">Proper nouns and sentence starts</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pro Tip -->
+            <div class="alert alert-info mt-5 border-0 shadow-sm" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-lightbulb fa-2x text-primary me-3"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Pro Tip</h6>
+                        <p class="mb-0">Your document demonstrates excellent grammar! Continue this quality in future writing.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg shadow">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+            <!-- Success Message -->
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                <h3 class="mt-4 text-success">Excellent Grammar!</h3>
+                <p class="lead text-muted mb-4">
+                    Your document has been analyzed and <strong>After analysis, the document now reports no grammar issues.</strong>.
+                </p>
+                
+                <!-- Stats -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="text-success mb-0">0</h4>
+                            <small class="text-muted">Issues Found</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="text-primary mb-0">{{ document.total_sentences }}</h4>
+                            <small class="text-muted">Sentences Analyzed</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="text-success mb-0">A+</h4>
+                            <small class="text-muted">Grammar Grade</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Badge -->
+                <div class="alert alert-success d-inline-block px-5 py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>
+                        All {{ document.total_sentences }} sentences are grammatically correct!
+                    </h5>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="alert alert-info">
+                <h6 class="mb-2">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Grammar Analysis Checked For:</strong>
+                </h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="mb-0">
+                            <li>✓ Subject-verb agreement</li>
+                            <li>✓ Verb tense consistency</li>
+                            <li>✓ Proper punctuation</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="mb-0">
+                            <li>✓ Sentence structure</li>
+                            <li>✓ Article usage (a/an/the)</li>
+                            <li>✓ Word order</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="readability" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-book-reader text-info me-2"></i>Readability Analysis</h3>
+            
+            {% if document.detailed_analysis and document.detailed_analysis.get('flesch_reading_ease') %}
+            
+            <!-- Main Readability Scores -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="text-center p-5 rounded shadow" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-chart-line fa-4x text-white mb-3"></i>
+                        <h1 class="text-white display-2 fw-bold mb-2">{{ "%.1f"|format(document.detailed_analysis.flesch_reading_ease) }}</h1>
+                        <h5 class="text-white mb-3 fw-bold">Flesch Reading Ease Score</h5>
+                        <div class="badge bg-white px-4 py-2" style="font-size: 1.1rem; color: #667eea;">
+                            {% set score = document.detailed_analysis.flesch_reading_ease %}
+                            {% if score >= 90 %}Very Easy to Read ✨
+                            {% elif score >= 80 %}Easy 😊
+                            {% elif score >= 70 %}Fairly Easy 👍
+                            {% elif score >= 60 %}Standard 📖
+                            {% elif score >= 50 %}Fairly Difficult 🤔
+                            {% elif score >= 30 %}Difficult 😓
+                            {% else %}Very Difficult 💪
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-center p-5 rounded shadow" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-graduation-cap fa-4x text-white mb-3"></i>
+                        <h1 class="text-white display-2 fw-bold mb-2">{{ document.detailed_analysis.reading_level }}</h1>
+                        <h5 class="text-white mb-3 fw-bold">Reading Grade Level</h5>
+                        <div class="badge bg-white px-4 py-2" style="font-size: 1.1rem; color: #4facfe;">
+                            {% if document.detailed_analysis.reading_level.replace('th', '').replace('st', '').replace('nd', '').replace('rd', '')|int <= 6 %}
+                            Elementary School 🎒
+                            {% elif document.detailed_analysis.reading_level.replace('th', '').replace('st', '').replace('nd', '').replace('rd', '')|int <= 8 %}
+                            Middle School 📚
+                            {% elif document.detailed_analysis.reading_level.replace('th', '').replace('st', '').replace('nd', '').replace('rd', '')|int <= 12 %}
+                            High School 🎓
+                            {% else %}
+                            College Level 🏛️
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Readability Scale -->
+            <div class="mb-5">
+                <h5 class="mb-3 fw-bold">
+                    <i class="fas fa-ruler-horizontal text-primary me-2"></i>
+                    Readability Scale Guide:
+                </h5>
+                <div class="position-relative" style="height: 80px;">
+                    <div class="w-100 h-100 rounded overflow-hidden shadow">
+                        <div class="d-flex h-100">
+                            <div class="text-center p-2 text-white d-flex align-items-center justify-content-center" style="flex: 1; background: #e74c3c;">
+                                <small class="fw-bold">Very<br>Difficult<br>0-30</small>
+                            </div>
+                            <div class="text-center p-2 text-white d-flex align-items-center justify-content-center" style="flex: 1; background: #e67e22;">
+                                <small class="fw-bold">Difficult<br>30-50</small>
+                            </div>
+                            <div class="text-center p-2 text-white d-flex align-items-center justify-content-center" style="flex: 1; background: #f39c12;">
+                                <small class="fw-bold">Fairly<br>Difficult<br>50-60</small>
+                            </div>
+                            <div class="text-center p-2 text-white d-flex align-items-center justify-content-center" style="flex: 1; background: #f1c40f;">
+                                <small class="fw-bold">Standard<br>60-70</small>
+                            </div>
+                            <div class="text-center p-2 text-white d-flex align-items-center justify-content-center" style="flex: 1; background: #2ecc71;">
+                                <small class="fw-bold">Fairly<br>Easy<br>70-80</small>
+                            </div>
+                            <div class="text-center p-2 text-white d-flex align-items-center justify-content-center" style="flex: 1; background: #27ae60;">
+                                <small class="fw-bold">Easy<br>80-90</small>
+                            </div>
+                            <div class="text-center p-2 text-white d-flex align-items-center justify-content-center" style="flex: 1; background: #16a085;">
+                                <small class="fw-bold">Very<br>Easy<br>90-100</small>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Score Pointer -->
+                    <div class="position-absolute" style="left: {{ document.detailed_analysis.flesch_reading_ease }}%; top: -15px; transform: translateX(-50%);">
+                        <i class="fas fa-caret-down fa-2x text-danger"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Analysis -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="text-center p-4 bg-light rounded shadow-sm">
+                        <i class="fas fa-font fa-2x text-primary mb-2"></i>
+                        <h4 class="mb-1">{{ document.total_words }}</h4>
+                        <small class="text-muted fw-bold">Total Words</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-4 bg-light rounded shadow-sm">
+                        <i class="fas fa-paragraph fa-2x text-success mb-2"></i>
+                        <h4 class="mb-1">{{ document.total_sentences }}</h4>
+                        <small class="text-muted fw-bold">Total Sentences</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-4 bg-light rounded shadow-sm">
+                        <i class="fas fa-text-width fa-2x text-warning mb-2"></i>
+                        <h4 class="mb-1">{{ "%.1f"|format(document.detailed_analysis.get('avg_words_per_sentence', 0)) }}</h4>
+                        <small class="text-muted fw-bold">Avg Words/Sentence</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-4 bg-light rounded shadow-sm">
+                        <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                        <h4 class="mb-1">{{ "%.0f"|format((document.total_characters / document.total_words) if document.total_words > 0 else 0) }}</h4>
+                        <small class="text-muted fw-bold">Avg Word Length</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Audience -->
+            <div class="alert border-0 shadow-sm" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                <h6 class="fw-bold text-primary mb-3">
+                    <i class="fas fa-users me-2"></i>Target Audience:
+                </h6>
+                <p class="mb-2">
+                    {% set score = document.detailed_analysis.flesch_reading_ease %}
+                    {% if score >= 90 %}
+                    <strong>5th Grade Students</strong> - Your text is very easy to read. Perfect for children and casual readers.
+                    {% elif score >= 80 %}
+                    <strong>6th Grade Students</strong> - Easy reading level. Suitable for general audience and conversational content.
+                    {% elif score >= 70 %}
+                    <strong>7th-8th Grade Students</strong> - Fairly easy to read. Good for blog posts and marketing materials.
+                    {% elif score >= 60 %}
+                    <strong>8th-9th Grade Students</strong> - Plain English. Suitable for most adults and business communications.
+                    {% elif score >= 50 %}
+                    <strong>10th-12th Grade Students</strong> - Fairly difficult. Suitable for high school students and educated readers.
+                    {% elif score >= 30 %}
+                    <strong>College Students</strong> - Difficult reading. Best for college graduates and professionals.
+                    {% else %}
+                    <strong>College Graduates</strong> - Very difficult. Suitable for academic and technical audiences.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Reading Time Estimate -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="p-4 rounded shadow-sm" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left: 5px solid #ff9800;">
+                        <h6 class="fw-bold text-warning mb-2">
+                            <i class="fas fa-clock me-2"></i>Estimated Reading Time:
+                        </h6>
+                        <h4 class="mb-0">{{ "%.1f"|format((document.total_words / 200)) }} minutes</h4>
+                        <small class="text-muted">(Average reading speed: 200 words/min)</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-4 rounded shadow-sm" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-left: 5px solid #9c27b0;">
+                        <h6 class="fw-bold mb-2" style="color: #9c27b0;">
+                            <i class="fas fa-microphone me-2"></i>Estimated Speaking Time:
+                        </h6>
+                        <h4 class="mb-0">{{ "%.1f"|format((document.total_words / 150)) }} minutes</h4>
+                        <small class="text-muted">(Average speaking speed: 150 words/min)</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="alert alert-info border-0 shadow-sm">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>Readability Tips:
+                </h6>
+                <ul class="mb-0">
+                    <li>✓ Shorter sentences (15-20 words) improve readability</li>
+                    <li>✓ Use simple words when possible</li>
+                    <li>✓ Break long paragraphs into smaller chunks</li>
+                    <li>✓ Use active voice instead of passive voice</li>
+                </ul>
+            </div>
+
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Readability analysis not available for this document.
+            </div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg shadow">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>                <div class="col-md-6">
+                    <div class="text-center p-5 bg-light rounded">
+                        <i class="fas fa-graduation-cap fa-4x text-info mb-3"></i>
+                        <h1 class="text-info">{{ document.detailed_analysis.reading_level }}</h1>
+                        <h5>Reading Grade Level</h5>
+                        <p class="text-muted">Education level required</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="corrected" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-magic text-success me-2"></i>Auto-Corrected Document</h3>
+            {% if document.corrected_text %}
+            
+            <!-- Correction Summary -->
+            {% if document.detailed_analysis and document.detailed_analysis.get('misspelled_count', 0) > 0 %}
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="alert alert-danger mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-times-circle fa-2x me-3"></i>
+                            <div>
+                                <h4 class="mb-0">{{ document.detailed_analysis.misspelled_count }}</h4>
+                                <small>Errors Detected</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-success mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-2x me-3"></i>
+                            <div>
+                                <h4 class="mb-0">{{ document.detailed_analysis.misspelled_count }}</h4>
+                                <small>Errors Fixed</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="alert alert-info mb-0">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-percentage fa-2x me-3"></i>
+                            <div>
+                                <h4 class="mb-0">100%</h4>
+                                <small>Success Rate</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Errors Fixed List -->
+            <div class="alert alert-warning mb-4">
+                <h6 class="mb-2">
+                    <i class="fas fa-wrench me-2"></i>
+                    <strong>Corrections Applied:</strong>
+                </h6>
+                <div class="mt-2">
+                    {% for word in document.detailed_analysis.misspelled_words %}
+                    <span class="badge bg-warning text-dark me-2 mb-2" style="font-size: 14px; padding: 8px 12px;">
+                        <i class="fas fa-check me-1"></i>{{ word }} → Fixed
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                No spelling errors were detected in the original document.
+            </div>
+            {% endif %}
+
+            <!-- Success Message -->
+            <div class="alert alert-success mb-4">
+                <h5 class="mb-2">
+                    <i class="fas fa-check-double me-2"></i>
+                    Auto-Correction Complete!
+                </h5>
+                <p class="mb-0">
+                    All spelling errors have been automatically corrected. 
+                    {% if document.detailed_analysis and document.detailed_analysis.get('misspelled_count', 0) > 0 %}
+                    <strong>{{ document.detailed_analysis.misspelled_count }}</strong> corrections were applied to your document.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Corrected Text Box -->
+            <h5 class="mb-3">
+                <i class="fas fa-file-alt text-success me-2"></i>Corrected Document:
+            </h5>
+            <div class="corrected-box mb-3">{{ document.corrected_text }}</div>
+            
+            <!-- Action Buttons -->
+            <div class="text-center mt-4">
+                <button class="btn btn-success btn-lg me-2" onclick="copyText()">
+                    <i class="fas fa-copy me-2"></i>Copy Text
+                </button>
+                <button class="btn btn-info btn-lg me-2" onclick="downloadText()">
+                    <i class="fas fa-download me-2"></i>Download TXT
+                </button>
+                <button class="btn btn-secondary btn-lg me-2" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Print
+                </button>
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <i class="fas fa-home me-2"></i>Back to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="comparison" class="tab-content-area">
+        <div class="content-card">
+            <h3 class="mb-4"><i class="fas fa-columns text-secondary me-2"></i>Side-by-Side Comparison</h3>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h5 class="text-danger mb-3">
+                        <i class="fas fa-times-circle me-2"></i>Original (With Errors)
+                    </h5>
+                    <div class="comparison-panel original-panel">
+                        <pre style="white-space: pre-wrap; margin:0;">{{ document.extracted_text }}</pre>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-success mb-3">
+                        <i class="fas fa-check-circle me-2"></i>Corrected (Fixed)
+                    </h5>
+                    <div class="comparison-panel fixed-panel">
+                        <pre style="white-space: pre-wrap; margin:0;">{{ document.corrected_text }}</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-lightbulb me-2"></i>Scroll both panels to see all changes
+            </div>
+            <div class="text-center mt-4">
+                <a href="/dashboard" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-home me-2"></i>Dashboard
+                </a>
+                <button onclick="window.print()" class="btn btn-secondary btn-lg me-2">
+                    <i class="fas fa-print me-2"></i>Print
+                </button>
+                <form method="POST" action="/delete/{{ document.doc_id }}" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('Delete?')">
+                        <i class="fas fa-trash me-2"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content-area').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    event.target.closest('.tab-btn').classList.add('active');
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

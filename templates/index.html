@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Analyzer | MICT Computer Education</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        overflow-x: hidden;
+    }
+    
+    /* Navbar */
+    .navbar {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+    .navbar-brand {
+        font-size: 1.5rem;
+        font-weight: bold;
+        letter-spacing: 2px;
+        transition: all 0.3s ease;
+    }
+    
+    /* Logo Hover Effects */
+    .navbar-brand:hover img {
+        transform: rotate(360deg) scale(1.1);
+        transition: all 0.5s ease;
+    }
+    .navbar-brand:hover {
+        transform: translateY(-2px);
+    }
+    
+    .nav-link {
+        color: white !important;
+        font-weight: 500;
+        margin: 0 10px;
+        transition: all 0.3s;
+    }
+    .nav-link:hover {
+        color: #ffc107 !important;
+        transform: translateY(-2px);
+    }
+        
+        /* Hero Slider */
+        .hero-slider {
+            height: 700px;
+            position: relative;
+        }
+        .carousel-item {
+            height: 700px;
+        }
+        .carousel-item img {
+            height: 700px;
+            object-fit: cover;
+            filter: brightness(0.6);
+        }
+        .carousel-caption {
+            top: 50%;
+            transform: translateY(-50%);
+            bottom: auto;
+        }
+        .carousel-caption h1 {
+            font-size: 3.5rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            animation: fadeInDown 1s;
+        }
+        .carousel-caption p {
+            font-size: 1.3rem;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        /* Stats Section */
+        .stats-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 0;
+            color: white;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 30px;
+        }
+        .stat-card h2 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .stat-card p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        /* Features Section */
+        .features-section {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .feature-card i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        .feature-card h4 {
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .action-btn {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 15px;
+            color: white;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            background: white;
+            color: #11998e;
+            transform: scale(1.05);
+        }
+        .action-btn i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px 0;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/" style="text-decoration:none;">
+    <div style="position:relative; margin-right:15px;">
+        <img src="{{ url_for('static', filename='images/logo.jpg') }}" 
+             alt="MICT Logo" 
+             height="55" 
+             style="border-radius:50%; 
+                    border:3px solid white; 
+                    box-shadow: 0 4px 15px rgba(255,255,255,0.3);
+                    transition: all 0.3s;">
+    </div>
+    <div style="display:flex; flex-direction:column; line-height:1.2;">
+        <span style="font-size:1.4rem; font-weight:bold; letter-spacing:2px; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,0.3);">
+            DOCUMENT ANALYZER
+        </span>
+        <small style="font-size:0.7rem; color:#ffc107; font-weight:500; letter-spacing:1px;">
+            <i class="fas fa-award me-1"></i>MICT COMPUTER EDUCATION
+        </small>
+    </div>
+</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home"><i class="fas fa-home me-2"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features"><i class="fas fa-star me-2"></i>Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login"><i class="fas fa-sign-in-alt me-2"></i>Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register"><i class="fas fa-user-plus me-2"></i>Register</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Slider -->
+    <div id="heroCarousel" class="carousel slide hero-slider" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1920" class="d-block w-100" alt="Document Analysis">
+                <div class="carousel-caption">
+                    <h1><i class="fas fa-file-alt"></i> Document Analyzer</h1>
+                    <p>Advanced Text Analysis & Spell Checking</p>
+                    <a href="/register" class="btn btn-warning btn-lg px-5">
+                        <i class="fas fa-rocket me-2"></i>Get Started
+                    </a>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1920" class="d-block w-100" alt="Analytics">
+                <div class="carousel-caption">
+                    <h1><i class="fas fa-chart-line"></i> Smart Analysis</h1>
+                    <p>Get Detailed Statistics & Readability Scores</p>
+                    <a href="/login" class="btn btn-success btn-lg px-5">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login Now
+                    </a>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1920" class="d-block w-100" alt="Team">
+                <div class="carousel-caption">
+                    <h1><i class="fas fa-spell-check"></i> Auto-Correction</h1>
+                    <p>Intelligent Spell Check & Grammar Analysis</p>
+                    <a href="/register" class="btn btn-info btn-lg px-5">
+                        <i class="fas fa-user-plus me-2"></i>Sign Up Free
+                    </a>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 stat-card">
+                    <i class="fas fa-file-alt fa-3x"></i>
+                    <h2>20+</h2>
+                    <p>Documents Analyzed</p>
+                </div>
+                <div class="col-md-3 stat-card">
+                    <i class="fas fa-users fa-3x"></i>
+                    <h2>10+</h2>
+                    <p>Happy Users</p>
+                </div>
+                <div class="col-md-3 stat-card">
+                    <i class="fas fa-check-circle fa-3x"></i>
+                    <h2>99.9%</h2>
+                    <p>Accuracy</p>
+                </div>
+                <div class="col-md-3 stat-card">
+                    <i class="fas fa-clock fa-3x"></i>
+                    <h2>24/7</h2>
+                    <p>Available</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-4 fw-bold">Our Features</h2>
+                <p class="lead text-muted">Powerful tools for document analysis</p>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-spell-check text-danger"></i>
+                        <h4>Spell Check</h4>
+                        <p>Automatically detect and highlight spelling errors in your documents</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-chart-bar text-success"></i>
+                        <h4>Text Analysis</h4>
+                        <p>Get detailed statistics: word count, sentences, paragraphs, keywords</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-book-reader text-info"></i>
+                        <h4>Readability Score</h4>
+                        <p>Calculate Flesch reading ease score and grade level</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-magic text-warning"></i>
+                        <h4>Auto-Correction</h4>
+                        <p>Intelligent spell correction with side-by-side comparison</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-file-upload text-primary"></i>
+                        <h4>Multi-Format Support</h4>
+                        <p>Upload TXT, PDF, DOCX files up to 50MB</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="fas fa-download text-dark"></i>
+                        <h4>Export Results</h4>
+                        <p>Download corrected text and analysis reports</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-4 fw-bold text-white">Quick Actions</h2>
+                <p class="lead text-white">Get started in seconds</p>
+            </div>
+            <div class="row">
+                <div class="col-md-3">
+                    <a href="/login" class="action-btn text-center">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <h5 class="mt-3">Login</h5>
+                        <p class="mb-0">Access your account</p>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/register" class="action-btn text-center">
+                        <i class="fas fa-user-plus"></i>
+                        <h5 class="mt-3">Register</h5>
+                        <p class="mb-0">Create new account</p>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/dashboard" class="action-btn text-center">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <h5 class="mt-3">Dashboard</h5>
+                        <p class="mb-0">View statistics</p>
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="/dashboard" class="action-btn text-center">
+                        <i class="fas fa-upload"></i>
+                        <h5 class="mt-3">Upload</h5>
+                        <p class="mb-0">Analyze documents</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center">
+        <div class="container">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <h5><i class="fas fa-file-alt me-2"></i>Document Analyzer</h5>
+                    <p>Advanced text analysis platform</p>
+                </div>
+                <div class="col-md-4">
+                    <h5><i class="fas fa-graduation-cap me-2"></i>MICT Computer Education</h5>
+                    <p>Govt. Recognised Institution</p>
+                </div>
+                <div class="col-md-4">
+                    <h5><i class="fas fa-envelope me-2"></i>Contact</h5>
+                    <p>info@mict.edu</p>
+                </div>
+            </div>
+            <hr class="bg-white">
+            <p>&copy; 2026 MICT Computer Education. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

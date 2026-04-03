@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+        <h2 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-folder me-2"></i>Total Documents</h5>
+                        <h2 class="mb-0">{{ stats.total_documents }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-database me-2"></i>Total Storage</h5>
+                        <h2 class="mb-0">{{ stats.total_storage_formatted }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-font me-2"></i>Words Analyzed</h5>
+                        <h2 class="mb-0">{{ stats.total_words }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-white" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-calendar me-2"></i>Last Upload</h5>
+                        <h2 class="mb-0">
+                            {% if stats.last_upload_date %}
+                                {{ stats.last_upload_date }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-upload me-2"></i>Upload Document
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file me-2"></i>Your Documents</h5>
+            </div>
+            <div class="card-body">
+                {% if documents %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Filename</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Words</th>
+                                <th>Upload Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td><i class="fas fa-file-alt me-2"></i>{{ doc.filename }}</td>
+                                <td><span class="badge bg-secondary">{{ doc.file_type.upper() }}</span></td>
+                                <td>{{ doc.file_size_formatted }}</td>
+                                <td>{{ doc.total_words }}</td>
+                                <td>{{ doc.upload_date }}</td>
+                                <td><span class="badge bg-success">{{ doc.status }}</span></td>
+                                                                <td>
+                                    <a href="/results/{{ doc.doc_id }}" class="btn btn-sm btn-info text-white" onclick="showLoading()">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </a>
+                                    <form method="POST" action="/delete/{{ doc.doc_id }}" style="display:inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">
+                                            <i class="fas fa-trash me-1"></i>Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-5x text-muted mb-3"></i>
+                    <h4>No documents yet</h4>
+                    <p class="text-muted">Upload your first document!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    <!-- Upload Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-upload me-2"></i>Upload Document
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/upload" enctype="multipart/form-data" onsubmit="showLoading()">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Select File</label>
+                            <input type="file" class="form-control form-control-lg"
+                                   name="document" accept=".txt,.pdf,.docx" required>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Supported: TXT, PDF, DOCX (Max 50MB)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Upload & Analyze
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
